@@ -1,2 +1,2 @@
 # java-transactiontool
-for send transaction
+java-transactiontool for send transaction
