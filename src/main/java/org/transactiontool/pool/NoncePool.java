@@ -6,20 +6,20 @@ import org.transactiontool.Utils.BeanToMapUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.beans.IntrospectionException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
 public class NoncePool {
 
     private ConcurrentHashMap<String, TreeMap<Long, NonceState>> noncepool;
     private Leveldb leveldb;
 
-    @Autowired
-    public NoncePool(Leveldb leveldb) {
+    public NoncePool() {
         this.leveldb=leveldb;
         try{
             this.noncepool = new ConcurrentHashMap<>();
@@ -49,7 +49,26 @@ public class NoncePool {
         return noncepool;
     }
 
-    public void add(String address,NonceState nonceState) throws IOException {
+    public static void add(String address, NonceState nonceState) throws IOException, InvocationTargetException, IntrospectionException, InstantiationException, IllegalAccessException {
+        ConcurrentHashMap<String, TreeMap<Long, NonceState>> noncepool = new ConcurrentHashMap<>();
+        Leveldb leveldb = new Leveldb();
+        String dbdata=leveldb.readFromSnapshot();
+        if(dbdata!=null && !dbdata.equals("")){
+            Map<String, Map<Integer, NonceState>> maps= JSON.parseObject(dbdata,HashMap.class);
+            for(Map.Entry<String, Map<Integer, NonceState>> entry:maps.entrySet()){
+                String key=entry.getKey();
+                Map<Integer, NonceState> map=entry.getValue();
+                TreeMap<Long, NonceState> treemap=new TreeMap<>();
+                for(Map.Entry<Integer, NonceState> entry1:map.entrySet()){
+                    int treekey=entry1.getKey();
+                    long key2=treekey;
+                    NonceState nonceState2= (NonceState) BeanToMapUtil.convertMap(NonceState.class, (Map) entry1.getValue());
+                    treemap.put(key2,nonceState2);
+                }
+                noncepool.put(key,treemap);
+            }
+        }
+
         if(noncepool.containsKey(address)){
             TreeMap<Long, NonceState> tmaps=noncepool.get(address);
             long nownonce=nonceState.getNonce();
@@ -87,7 +106,25 @@ public class NoncePool {
         return 0;
     }
 
-    public long getMaxNonce(String address){
+    public static long getMaxNonce(String address) throws IOException, InvocationTargetException, IntrospectionException, InstantiationException, IllegalAccessException {
+        ConcurrentHashMap<String, TreeMap<Long, NonceState>> noncepool = new ConcurrentHashMap<>();
+        Leveldb leveldb = new Leveldb();
+        String dbdata=leveldb.readFromSnapshot();
+        if(dbdata!=null && !dbdata.equals("")){
+            Map<String, Map<Integer, NonceState>> maps= JSON.parseObject(dbdata,HashMap.class);
+            for(Map.Entry<String, Map<Integer, NonceState>> entry:maps.entrySet()){
+                String key=entry.getKey();
+                Map<Integer, NonceState> map=entry.getValue();
+                TreeMap<Long, NonceState> treemap=new TreeMap<>();
+                for(Map.Entry<Integer, NonceState> entry1:map.entrySet()){
+                    int treekey=entry1.getKey();
+                    long key2=treekey;
+                    NonceState nonceState= (NonceState) BeanToMapUtil.convertMap(NonceState.class, (Map) entry1.getValue());
+                    treemap.put(key2,nonceState);
+                }
+                noncepool.put(key,treemap);
+            }
+        }
         if(noncepool.containsKey(address)){
             TreeMap<Long, NonceState> tmaps=noncepool.get(address);
             return tmaps.lastKey();

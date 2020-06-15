@@ -13,7 +13,9 @@ import org.transactiontool.pool.NoncePool;
 import org.transactiontool.pool.NonceState;
 import org.transactiontool.service.TxService;
 
+import java.beans.IntrospectionException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -460,7 +462,7 @@ public class TxServiceImpl implements TxService {
         }
     }
 
-    private Object getNonce(String fromPubkey, Node node) {
+    private Object getNonce(String fromPubkey, Node node) throws InvocationTargetException, IntrospectionException, InstantiationException, IllegalAccessException, IOException {
         //address 放入Message返回
         long nownonce = 0;
         String frompubhash = WalletUtility.pubkeyStrToPubkeyHashStr(fromPubkey);
@@ -509,7 +511,7 @@ public class TxServiceImpl implements TxService {
             return apiResult;
         }
 
-        public GetNownonce invoke() {
+        public GetNownonce invoke() throws IOException, IntrospectionException, InstantiationException, IllegalAccessException, InvocationTargetException {
             nownonce = 0;
             address = "";
             apiResult = (APIResult) getNonce(fromPubkey, node);
@@ -545,7 +547,7 @@ public class TxServiceImpl implements TxService {
             return nownonce;
         }
 
-        public UpdateNonce invoke() throws IOException {
+        public UpdateNonce invoke() throws IOException, IntrospectionException, InstantiationException, IllegalAccessException, InvocationTargetException {
             String txhash = (String) (data).get("data");
             if ((int) data.get("code") == 2000) {
                 nownonce++;
